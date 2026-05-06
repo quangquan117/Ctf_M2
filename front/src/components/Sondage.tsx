@@ -1,4 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
+import axios from 'axios'
+import api, { API_BASE_URL } from '../api/axios'
 import '../App.css'
 
 type SondageType = {
@@ -11,9 +14,9 @@ type SondageType = {
 }
 
 const durationOptions = [
-  { value: '24h', label: '24 heures' },
-  { value: '48h', label: '48 heures' },
-  { value: '72h', label: '72 heures' }
+  { value: '24h', label: '24 heures', minutes: 1440 },
+  { value: '48h', label: '48 heures', minutes: 2880 },
+  { value: '72h', label: '72 heures', minutes: 4320 }
 ]
 
 function Sondage() {
@@ -27,8 +30,11 @@ function Sondage() {
   })
 
   const [created, setCreated] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [shareToken, setShareToken] = useState('')
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target
     setSondage((prev) => ({
       ...prev,
@@ -60,23 +66,59 @@ function Sondage() {
     setSondage((prev) => ({ ...prev, allowMultiple: !prev.allowMultiple }))
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setLoading(true)
+    setError(null)
 
-    const now = new Date()
-    const dateCreation = now.toISOString().slice(0, 10)
-    const lienPartage = `https://sondage.app/${now.getTime()}`
-    const newSondage = {
-      ...sondage,
-      dateCreation,
-      lienPartage
+    try {
+      // Convertir la durée en minutes
+      const durationOption = durationOptions.find(opt => opt.value === sondage.duration)
+      if (!durationOption) {
+        throw new Error('Durée invalide')
+      }
+
+      // Préparer les données pour l'API
+      const requestData = {
+        titre: sondage.question,
+        description: '', // Le back-end attend une description, mais le front n'en a pas
+        dureeMinutes: durationOption.minutes,
+        multiReponse: sondage.allowMultiple,
+        options: sondage.answers.filter(answer => answer.trim() !== '')
+      }
+
+      // Vérifier qu'il y a au moins 2 options valides
+      if (requestData.options.length < 2) {
+        throw new Error('Vous devez fournir au moins 2 réponses')
+      }
+
+      // Faire l'appel API via Axios pour laisser l'interceptor ajouter le token utilisateur
+      const response = await api.post('/sondages', requestData)
+      const result = response.data
+
+      // Mettre à jour l'état avec les données du back-end
+      setShareToken(result.lienPartage)
+      setSondage((prev) => ({
+        ...prev,
+        dateCreation: new Date().toISOString().slice(0, 10),
+        lienPartage: `${API_BASE_URL}/sondages/${result.lienPartage}`
+      }))
+
+      setCreated(true)
+
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const message =
+          typeof err.response?.data === 'string'
+            ? err.response.data
+            : err.response?.data?.message
+        setError(message || err.message || 'Une erreur inattendue s\'est produite')
+      } else {
+        setError(err instanceof Error ? err.message : 'Une erreur inattendue s\'est produite')
+      }
+    } finally {
+      setLoading(false)
     }
-
-    setSondage(newSondage)
-    setCreated(true)
-
-    console.log('Sondage créé :', newSondage)
-    alert(`Sondage créé localement.\nLien de partage : ${lienPartage}`)
   }
 
   return (
@@ -156,22 +198,38 @@ function Sondage() {
             </div>
           </div>
 
-          <button type="submit" className="submit-button">
-            Post
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="submit-button" disabled={loading}>
+            {loading ? 'Création en cours...' : 'Post'}
           </button>
         </form>
 
         {created && (
           <section className="created-summary">
-            <p>Sondage créé localement.</p>
+            <p className="success-message" role="status" aria-live="polite">
+              Votre sondage a bien été enregistré avec succès.
+            </p>
             <div className="summary-row">
               <span>Date de création :</span>
               <strong>{sondage.dateCreation}</strong>
             </div>
             <div className="summary-row">
               <span>Lien de partage :</span>
-              <strong>{sondage.lienPartage}</strong>
+              <a href={sondage.lienPartage} target="_blank" rel="noopener noreferrer">
+                {sondage.lienPartage}
+              </a>
             </div>
+            <Link
+              to={`/sondages/${shareToken}/resultats`}
+              className="results-link-button"
+            >
+              Voir les résultats →
+            </Link>
           </section>
         )}
       </section>

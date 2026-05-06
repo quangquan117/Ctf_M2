@@ -89,6 +89,22 @@
     height: 22px;
   }
 
+  .results-link-button {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: #ff6600;
+  color: #111111;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.results-link-button:hover {
+  background: #ff7a22;
+  transform: translateY(-1px);
+}
   @media (max-width: 1024px) {
     flex-direction: column;
     text-align: center;
