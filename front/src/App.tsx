@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Sondage from "./components/Sondage";
+import PollDetail from "./pages/PollDetail";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
               </RequireAuth>
             }
           />
+          <Route path="/sondage/:id" element={<PollDetail />} />
         </Routes>
       </main>
     </BrowserRouter>
