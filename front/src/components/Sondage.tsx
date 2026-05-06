@@ -68,8 +68,8 @@ function Sondage() {
     setError(null)
 
     try {
-      // Utiliser le token JWT fourni
-      const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBwb2xsaHViLmxvY2FsIiwiaWF0IjoxNzc4MDczMzk0LCJleHAiOjE3NzgxNTk3OTR9.TuxnvNd2JnUdlk3wDJWVQtJM6nExD1MmXkDH-Sf80Kk'
+      // Récupérer le token depuis le localStorage
+      const token = localStorage.getItem('token')
 
       // Convertir la durée en minutes
       const durationOption = durationOptions.find(opt => opt.value === sondage.duration)
@@ -92,7 +92,7 @@ function Sondage() {
       }
 
       // Faire l'appel API
-      const response = await fetch('http://localhost:8080/sondages', {
+      const response = await fetch('http://10.190.4.90:8081/sondages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ function Sondage() {
       setSondage((prev) => ({
         ...prev,
         dateCreation: new Date().toISOString().slice(0, 10),
-        lienPartage: `http://localhost:8080/sondages/${result.lienPartage}`
+        lienPartage: `http://10.190.4.90:8081/sondages/${result.lienPartage}`
       }))
 
       setCreated(true)
