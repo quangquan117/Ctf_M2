@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: pollhub-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pollhub
+      MYSQL_USER: pollhub_user
+      MYSQL_PASSWORD: pollhub_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - pollhub-data:/var/lib/mysql
+      - ./back/init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: pollhub-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_NAME: pollhub
+      DB_USER: pollhub_user
+      DB_PASSWORD: pollhub_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: false
+    ports:
+      - "8080:8080"
+    networks:
+      - pollhub-network
+
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: pollhub-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    depends_on:
+      - app
+    networks:
+      - pollhub-network
+
+volumes:
+  pollhub-data:
+
+networks:
+  pollhub-network:
+    driver: bridge
