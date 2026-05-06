@@ -5,8 +5,8 @@ import "../styles/Auth.css";
 
 function Login() {
   const navigate = useNavigate();
-  const [pseudo, setPseudo] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [motDePasse, setMotDePasse] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -16,14 +16,14 @@ function Login() {
 
     try {
       setLoading(true);
-      const response = await authService.login({ pseudo, password });
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("pseudo", response.pseudo);
+      await authService.login({ email: email.trim(), motDePasse });
       navigate("/");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Pseudo ou mot de passe incorrect."
-      );
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Email ou mot de passe incorrect.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -32,30 +32,35 @@ function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Se connecter</h2>
-        <p className="auth-description">Heureux de vous revoir !</p>
+        <div className="auth-logo">P</div>
+        <h2>Connexion</h2>
+        <p className="auth-description">
+          Heureux de vous revoir sur PollHub.
+        </p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="field">
-            <label htmlFor="pseudo">Pseudo</label>
+            <label htmlFor="email">Adresse email</label>
             <input
-              id="pseudo"
-              type="text"
-              value={pseudo}
-              onChange={(e) => setPseudo(e.target.value)}
-              placeholder="Votre pseudo"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="vous@exemple.com"
+              autoComplete="email"
               required
             />
           </div>
 
           <div className="field">
-            <label htmlFor="password">Mot de passe</label>
+            <label htmlFor="motDePasse">Mot de passe</label>
             <input
-              id="password"
+              id="motDePasse"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={motDePasse}
+              onChange={(e) => setMotDePasse(e.target.value)}
               placeholder="Votre mot de passe"
+              autoComplete="current-password"
               required
             />
           </div>
