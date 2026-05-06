@@ -38,6 +38,9 @@ public class Sondage {
     @Column(name = "date_fermeture", nullable = false)
     private LocalDateTime dateFermeture;
 
+    @Column(name = "multi_reponse", nullable = false)
+    private boolean multiReponse = false;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_utilisateur")
     private Utilisateur utilisateur;
@@ -107,5 +110,13 @@ public class Sondage {
 
     public void setOptions(List<Option> options) {
         this.options = options;
+    }
+
+    public boolean isMultiReponse() {
+        return multiReponse;
+    }
+
+    public void setMultiReponse(boolean multiReponse) {
+        this.multiReponse = multiReponse;
     }
 }
