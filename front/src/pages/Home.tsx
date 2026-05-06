@@ -1,7 +1,17 @@
 import { Link } from "react-router-dom";
+import { authService } from "../services/authService";
 import "../styles/Home.css";
 
 function Home() {
+
+  const isAuthenticated =
+    authService.isAuthenticated() && authService.getCurrentUser() !== null;
+
+  const ctaLink = isAuthenticated ? "/creer-sondage" : "/inscription";
+  const ctaLabel = isAuthenticated
+    ? "Créer un sondage maintenant"
+    : "Créer un sondage gratuitement";
+
   return (
     <div className="home">
       {/* Section principale */}
@@ -20,13 +30,15 @@ function Home() {
           en temps réel. Aucune installation, juste un navigateur.
         </p>
         <div className="hero-buttons">
-          <Link to="/inscription" className="btn-primary">
-            Créer un sondage gratuitement
+          <Link to={ctaLink} className="btn-primary">
+            {ctaLabel}
             <span className="btn-arrow">→</span>
           </Link>
-          <Link to="/connexion" className="btn-secondary">
-            J'ai déjà un compte
-          </Link>
+          {!isAuthenticated && (
+            <Link to="/connexion" className="btn-secondary">
+              J'ai déjà un compte
+            </Link>
+          )}
         </div>
       </section>
 
@@ -66,10 +78,18 @@ function Home() {
 
       {/* Section CTA */}
       <section className="cta">
-        <h2>Prêt à lancer votre premier sondage ?</h2>
-        <p>Inscrivez-vous, c'est gratuit et ça prend 30 secondes.</p>
-        <Link to="/inscription" className="btn-primary btn-large">
-          Commencer maintenant
+        <h2>
+          {isAuthenticated
+            ? "Prêt à lancer votre prochain sondage ?"
+            : "Prêt à lancer votre premier sondage ?"}
+        </h2>
+        <p>
+          {isAuthenticated
+            ? "Posez une question, partagez le lien, c'est parti."
+            : "Inscrivez-vous, c'est gratuit et ça prend 30 secondes."}
+        </p>
+        <Link to={ctaLink} className="btn-primary btn-large">
+          {isAuthenticated ? "Créer un sondage" : "Commencer maintenant"}
         </Link>
       </section>
     </div>
