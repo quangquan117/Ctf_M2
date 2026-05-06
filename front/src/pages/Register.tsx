@@ -5,41 +5,50 @@ import "../styles/Auth.css";
 
 function Register() {
   const navigate = useNavigate();
-  const [pseudo, setPseudo] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [nom, setNom] = useState("");
+  const [email, setEmail] = useState("");
+  const [motDePasse, setMotDePasse] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Vérifie qu'une chaîne ressemble à une adresse email valide
+  const isEmailValide = (email: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
 
     // Validations côté front
-    if (pseudo.length < 3) {
-      setError("Le pseudo doit contenir au moins 3 caractères.");
+    if (nom.trim().length < 2) {
+      setError("Le nom doit contenir au moins 2 caractères.");
       return;
     }
-    if (password.length < 6) {
+    if (!isEmailValide(email)) {
+      setError("Veuillez entrer une adresse email valide.");
+      return;
+    }
+    if (motDePasse.length < 6) {
       setError("Le mot de passe doit contenir au moins 6 caractères.");
       return;
     }
-    if (password !== confirmPassword) {
+    if (motDePasse !== confirmation) {
       setError("Les mots de passe ne correspondent pas.");
       return;
     }
 
     try {
       setLoading(true);
-      const response = await authService.register({ pseudo, password });
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("pseudo", response.pseudo);
+      await authService.register({ nom: nom.trim(), email: email.trim(), motDePasse });
       navigate("/");
     } catch (err: any) {
-      setError(
+      const message =
         err.response?.data?.message ||
-          "Erreur lors de l'inscription. Veuillez réessayer."
-      );
+        err.response?.data?.error ||
+        "Erreur lors de l'inscription. Cet email est peut-être déjà utilisé.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -48,44 +57,61 @@ function Register() {
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <div className="auth-logo">P</div>
         <h2>Créer un compte</h2>
         <p className="auth-description">
-          Rejoignez-nous pour créer vos premiers sondages.
+          Rejoignez PollHub et créez vos premiers sondages.
         </p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="field">
-            <label htmlFor="pseudo">Pseudo</label>
+            <label htmlFor="nom">Nom</label>
             <input
-              id="pseudo"
+              id="nom"
               type="text"
-              value={pseudo}
-              onChange={(e) => setPseudo(e.target.value)}
-              placeholder="Votre pseudo"
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              placeholder="Votre nom"
+              autoComplete="name"
               required
             />
           </div>
 
           <div className="field">
-            <label htmlFor="password">Mot de passe</label>
+            <label htmlFor="email">Adresse email</label>
             <input
-              id="password"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="vous@exemple.com"
+              autoComplete="email"
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="motDePasse">Mot de passe</label>
+            <input
+              id="motDePasse"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={motDePasse}
+              onChange={(e) => setMotDePasse(e.target.value)}
               placeholder="Au moins 6 caractères"
+              autoComplete="new-password"
               required
             />
           </div>
 
           <div className="field">
-            <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
+            <label htmlFor="confirmation">Confirmer le mot de passe</label>
             <input
-              id="confirmPassword"
+              id="confirmation"
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={confirmation}
+              onChange={(e) => setConfirmation(e.target.value)}
               placeholder="Retapez votre mot de passe"
+              autoComplete="new-password"
               required
             />
           </div>
