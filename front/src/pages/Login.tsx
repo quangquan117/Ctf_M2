@@ -1,14 +1,18 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authService } from "../services/authService";
 import "../styles/Auth.css";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const from = (location.state as { from?: { pathname: string } } | null)
+    ?.from?.pathname || "/";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -17,7 +21,7 @@ function Login() {
     try {
       setLoading(true);
       await authService.login({ email: email.trim(), motDePasse });
-      navigate("/");
+      navigate(from, { replace: true });
     } catch (err: any) {
       const message =
         err.response?.data?.message ||

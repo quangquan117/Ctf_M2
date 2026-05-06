@@ -4,8 +4,8 @@ import "../styles/Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
-  const isAuthenticated = authService.isAuthenticated();
   const currentUser = authService.getCurrentUser();
+  const isAuthenticated = authService.isAuthenticated() && currentUser !== null;
 
   const handleLogout = () => {
     authService.logout();
@@ -21,6 +21,10 @@ function Navbar() {
       <div className="links">
         {isAuthenticated && currentUser ? (
           <>
+            <Link to="/creer-sondage" className="btn-new-poll">
+              <span className="btn-new-poll-icon">+</span>
+              Nouveau sondage
+            </Link>
             <span className="welcome">
               Bonjour, <span className="welcome-name">{currentUser.nom}</span>
             </span>
