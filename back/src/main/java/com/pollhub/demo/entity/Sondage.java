@@ -1,6 +1,7 @@
 package com.pollhub.demo.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,11 +35,17 @@ public class Sondage {
     @Column(name = "lien_partage", unique = true)
     private String lienPartage;
 
+    @Column(name = "date_fermeture", nullable = false)
+    private LocalDateTime dateFermeture;
+
+    @Column(name = "multi_reponse", nullable = false)
+    private boolean multiReponse = false;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_utilisateur")
     private Utilisateur utilisateur;
 
-    @OneToMany(mappedBy = "sondage")
+    @OneToMany(mappedBy = "sondage", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Option> options = new ArrayList<>();
 
     public Long getIdSondage() {
@@ -81,6 +88,14 @@ public class Sondage {
         this.lienPartage = lienPartage;
     }
 
+    public LocalDateTime getDateFermeture() {
+        return dateFermeture;
+    }
+
+    public void setDateFermeture(LocalDateTime dateFermeture) {
+        this.dateFermeture = dateFermeture;
+    }
+
     public Utilisateur getUtilisateur() {
         return utilisateur;
     }
@@ -95,5 +110,13 @@ public class Sondage {
 
     public void setOptions(List<Option> options) {
         this.options = options;
+    }
+
+    public boolean isMultiReponse() {
+        return multiReponse;
+    }
+
+    public void setMultiReponse(boolean multiReponse) {
+        this.multiReponse = multiReponse;
     }
 }
