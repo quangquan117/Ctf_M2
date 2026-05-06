@@ -1,3 +1,45 @@
+# Java/Gradle
+.gradle/
+build/
+bin/
+gradle/wrapper/gradle-wrapper.jar
+*.iml
+out/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Node.js
+node_modules/
+dist/
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Database
+*.db
+*.sqlite
+
+# Docker
+.dockerignore
+
+# Back specific
 back/.gradle/
 back/build/
+back/bin/
 back/.idea/
+
+back copie/

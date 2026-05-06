@@ -72,6 +72,7 @@ public class SondageController {
         sondage.setDateFermeture(now.plusMinutes(request.dureeMinutes()));
         sondage.setLienPartage(UUID.randomUUID().toString());
         sondage.setUtilisateur(owner);
+        sondage.setMultiReponse(request.multiReponse() != null && request.multiReponse());
 
         List<Option> options = new ArrayList<>();
         for (String texteOption : validOptions) {
@@ -113,16 +114,30 @@ public class SondageController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("You already voted on this poll");
         }
 
-        Option option = optionRepository.findByIdOptionAndSondageIdSondage(request.idOption(), sondage.getIdSondage()).orElse(null);
-        if (option == null) {
-            return ResponseEntity.badRequest().body("Option does not belong to this poll");
+        if (request.idOptions() == null || request.idOptions().isEmpty()) {
+            return ResponseEntity.badRequest().body("You must select at least one option");
+        }
+        if (request.idOptions().size() > 1 && !sondage.isMultiReponse()) {
+            return ResponseEntity.badRequest().body("This poll does not allow multiple responses");
         }
 
-        Vote vote = new Vote();
-        vote.setDateVote(LocalDateTime.now());
-        vote.setUtilisateur(user);
-        vote.setOption(option);
-        voteRepository.save(vote);
+        List<Option> optionsToVote = new ArrayList<>();
+        for (Long optId : request.idOptions()) {
+            Option option = optionRepository.findByIdOptionAndSondageIdSondage(optId, sondage.getIdSondage()).orElse(null);
+            if (option == null) {
+                return ResponseEntity.badRequest().body("Option does not belong to this poll");
+            }
+            optionsToVote.add(option);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Option option : optionsToVote) {
+            Vote vote = new Vote();
+            vote.setDateVote(now);
+            vote.setUtilisateur(user);
+            vote.setOption(option);
+            voteRepository.save(vote);
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Vote recorded");
     }
@@ -206,6 +221,7 @@ public class SondageController {
             sondage.getDescription(),
             sondage.getLienPartage(),
             sondage.getDateFermeture(),
+            sondage.isMultiReponse(),
             options
         );
     }
@@ -214,10 +230,11 @@ public class SondageController {
         String titre,
         String description,
         Long dureeMinutes,
+        Boolean multiReponse,
         List<String> options
     ) {}
 
-    public record VoteRequest(Long idOption) {}
+    public record VoteRequest(List<Long> idOptions) {}
 
     public record SondageResponse(
         Long id,
@@ -225,6 +242,7 @@ public class SondageController {
         String description,
         String lienPartage,
         LocalDateTime dateFermeture,
+        boolean multiReponse,
         List<SondageOptionResponse> options
     ) {}
 
