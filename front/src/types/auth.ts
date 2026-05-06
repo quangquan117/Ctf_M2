@@ -1,14 +1,22 @@
 export interface RegisterData {
-  pseudo: string;
-  password: string;
+  nom: string;
+  email: string;
+  motDePasse: string;
 }
 
 export interface LoginData {
-  pseudo: string;
-  password: string;
+  email: string;
+  motDePasse: string;
+}
+
+export interface User {
+  id: number;
+  nom: string;
+  email: string;
 }
 
 export interface AuthResponse {
-  token: string;
-  pseudo: string;
+  accessToken: string;
+  tokenType: string;
+  utilisateur: User;
 }
