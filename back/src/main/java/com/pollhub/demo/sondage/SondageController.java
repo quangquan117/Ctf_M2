@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -44,19 +46,22 @@ public class SondageController {
 
     @PostMapping
     public ResponseEntity<?> createSondage(@RequestBody CreateSondageRequest request, Authentication authentication) {
-        if (authentication == null) {
+        Utilisateur owner = getAuthenticatedUser(authentication);
+        if (owner == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        if (request.options() == null || request.options().size() < 2) {
-            return ResponseEntity.badRequest().body("A poll requires at least 2 options");
         }
         if (request.dureeMinutes() == null || request.dureeMinutes() <= 0) {
             return ResponseEntity.badRequest().body("Duration must be greater than 0 minute");
         }
+        if (request.options() == null) {
+            return ResponseEntity.badRequest().body("A poll requires at least 2 options");
+        }
 
-        Utilisateur owner = utilisateurRepository.findByEmail(authentication.getName()).orElse(null);
-        if (owner == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        List<String> validOptions = request.options().stream()
+            .filter(option -> option != null && !option.trim().isEmpty())
+            .toList();
+        if (validOptions.size() < 2) {
+            return ResponseEntity.badRequest().body("A poll requires at least 2 non-empty options");
         }
 
         Sondage sondage = new Sondage();
@@ -69,9 +74,9 @@ public class SondageController {
         sondage.setUtilisateur(owner);
 
         List<Option> options = new ArrayList<>();
-        for (String texteOption : request.options()) {
+        for (String texteOption : validOptions) {
             Option option = new Option();
-            option.setTexte(texteOption);
+            option.setTexte(texteOption.trim());
             option.setSondage(sondage);
             options.add(option);
         }
@@ -87,13 +92,9 @@ public class SondageController {
         @RequestBody VoteRequest request,
         Authentication authentication
     ) {
-        if (authentication == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        Utilisateur user = utilisateurRepository.findByEmail(authentication.getName()).orElse(null);
+        Utilisateur user = getAuthenticatedUser(authentication);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         Sondage sondage = sondageRepository.findByLienPartage(lienPartage).orElse(null);
@@ -124,6 +125,74 @@ public class SondageController {
         voteRepository.save(vote);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Vote recorded");
+    }
+
+    @GetMapping
+    public List<SondageResponse> getAllSondages() {
+        return sondageRepository.findAll().stream()
+            .map(this::toSondageResponse)
+            .toList();
+    }
+
+    @GetMapping("/{lienPartage}")
+    public ResponseEntity<?> getSondageByLink(@PathVariable String lienPartage) {
+        Sondage sondage = sondageRepository.findByLienPartage(lienPartage).orElse(null);
+        if (sondage == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Poll not found");
+        }
+        return ResponseEntity.ok(toSondageResponse(sondage));
+    }
+
+    @GetMapping("/{lienPartage}/resultats")
+    public ResponseEntity<?> getSondageResults(@PathVariable String lienPartage) {
+        Sondage sondage = sondageRepository.findByLienPartage(lienPartage).orElse(null);
+        if (sondage == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Poll not found");
+        }
+
+        long totalVotes = voteRepository.countByOptionSondageIdSondage(sondage.getIdSondage());
+        List<OptionResultResponse> options = sondage.getOptions().stream()
+            .map(option -> {
+                long votes = voteRepository.countByOptionIdOption(option.getIdOption());
+                return new OptionResultResponse(option.getIdOption(), option.getTexte(), votes);
+            })
+            .toList();
+
+        return ResponseEntity.ok(
+            new SondageResultResponse(
+                sondage.getIdSondage(),
+                sondage.getTitre(),
+                sondage.getLienPartage(),
+                totalVotes,
+                options
+            )
+        );
+    }
+
+    @DeleteMapping("/{lienPartage}")
+    public ResponseEntity<?> deleteSondage(@PathVariable String lienPartage, Authentication authentication) {
+        Utilisateur user = getAuthenticatedUser(authentication);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Sondage sondage = sondageRepository.findByLienPartage(lienPartage).orElse(null);
+        if (sondage == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Poll not found");
+        }
+        if (!sondage.getUtilisateur().getIdUtilisateur().equals(user.getIdUtilisateur())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only the poll author can delete this poll");
+        }
+
+        sondageRepository.delete(sondage);
+        return ResponseEntity.ok("Poll deleted");
+    }
+
+    private Utilisateur getAuthenticatedUser(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        return utilisateurRepository.findByEmail(authentication.getName()).orElse(null);
     }
 
     private SondageResponse toSondageResponse(Sondage sondage) {
@@ -160,4 +229,18 @@ public class SondageController {
     ) {}
 
     public record SondageOptionResponse(Long id, String texte) {}
+
+    public record SondageResultResponse(
+        Long id,
+        String titre,
+        String lienPartage,
+        long totalVotes,
+        List<OptionResultResponse> options
+    ) {}
+
+    public record OptionResultResponse(
+        Long id,
+        String texte,
+        long votes
+    ) {}
 }
