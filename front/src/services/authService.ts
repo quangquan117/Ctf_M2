@@ -23,6 +23,10 @@ export const authService = {
   },
 
   saveSession: (authResponse: AuthResponse): void => {
+    if (!authResponse?.accessToken || !authResponse?.utilisateur) {
+      console.warn("Réponse d'authentification invalide :", authResponse);
+      return;
+    }
     localStorage.setItem(TOKEN_KEY, authResponse.accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(authResponse.utilisateur));
   },
@@ -32,12 +36,25 @@ export const authService = {
     localStorage.removeItem(USER_KEY);
   },
 
+
   isAuthenticated: (): boolean => {
-    return localStorage.getItem(TOKEN_KEY) !== null;
+    const token = localStorage.getItem(TOKEN_KEY);
+    return token !== null && token !== "" && token !== "undefined";
   },
 
   getCurrentUser: (): User | null => {
     const userStr = localStorage.getItem(USER_KEY);
-    return userStr ? JSON.parse(userStr) : null;
+
+    if (!userStr || userStr === "undefined" || userStr === "null") {
+      return null;
+    }
+
+    try {
+      return JSON.parse(userStr) as User;
+    } catch (error) {
+      console.warn("Données utilisateur corrompues, nettoyage en cours...");
+      authService.logout();
+      return null;
+    }
   },
 };
