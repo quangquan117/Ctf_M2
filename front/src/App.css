@@ -221,6 +221,7 @@
 .field-group {
   display: grid;
   gap: 10px;
+  max-width: 100%;
 }
 
 .field-title,
@@ -228,6 +229,9 @@
   font-size: 0.95rem;
   font-weight: 700;
   color: #f8fafc;
+}
+#question{
+  max-width: 95%;
 }
 
 .survey-form input,
@@ -293,12 +297,6 @@
 .secondary-button:hover,
 .submit-button:hover {
   opacity: 0.95;
-}
-
-.grid-two {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
 }
 
 .checkbox-field {
