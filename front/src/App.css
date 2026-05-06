@@ -390,6 +390,16 @@
   border: 1px solid rgba(255, 102, 0, 0.4);
 }
 
+.success-message {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  color: #bbf7d0;
+  font-weight: 700;
+}
+
 .created-summary p {
   margin: 0 0 16px;
   color: #ffffff;

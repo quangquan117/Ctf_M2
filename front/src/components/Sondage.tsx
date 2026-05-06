@@ -1,4 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
+import axios from 'axios'
+import api, { API_BASE_URL } from '../api/axios'
 import '../App.css'
 
 type SondageType = {
@@ -68,9 +70,6 @@ function Sondage() {
     setError(null)
 
     try {
-      // Récupérer le token depuis le localStorage
-      const token = localStorage.getItem('token')
-
       // Convertir la durée en minutes
       const durationOption = durationOptions.find(opt => opt.value === sondage.duration)
       if (!durationOption) {
@@ -91,34 +90,29 @@ function Sondage() {
         throw new Error('Vous devez fournir au moins 2 réponses')
       }
 
-      // Faire l'appel API
-      const response = await fetch('http://10.190.4.90:8081/sondages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestData)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.text()
-        throw new Error(errorData || `Erreur HTTP: ${response.status}`)
-      }
-
-      const result = await response.json()
+      // Faire l'appel API via Axios pour laisser l'interceptor ajouter le token utilisateur
+      const response = await api.post('/sondages', requestData)
+      const result = response.data
 
       // Mettre à jour l'état avec les données du back-end
       setSondage((prev) => ({
         ...prev,
         dateCreation: new Date().toISOString().slice(0, 10),
-        lienPartage: `http://10.190.4.90:8081/sondages/${result.lienPartage}`
+        lienPartage: `${API_BASE_URL}/sondages/${result.lienPartage}`
       }))
 
       setCreated(true)
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur inattendue s\'est produite')
+      if (axios.isAxiosError(err)) {
+        const message =
+          typeof err.response?.data === 'string'
+            ? err.response.data
+            : err.response?.data?.message
+        setError(message || err.message || 'Une erreur inattendue s\'est produite')
+      } else {
+        setError(err instanceof Error ? err.message : 'Une erreur inattendue s\'est produite')
+      }
     } finally {
       setLoading(false)
     }
@@ -214,7 +208,9 @@ function Sondage() {
 
         {created && (
           <section className="created-summary">
-            <p>Sondage créé avec succès !</p>
+            <p className="success-message" role="status" aria-live="polite">
+              Votre sondage a bien été enregistré avec succès.
+            </p>
             <div className="summary-row">
               <span>Date de création :</span>
               <strong>{sondage.dateCreation}</strong>
