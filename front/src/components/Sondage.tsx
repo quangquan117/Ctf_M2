@@ -11,9 +11,9 @@ type SondageType = {
 }
 
 const durationOptions = [
-  { value: '24h', label: '24 heures' },
-  { value: '48h', label: '48 heures' },
-  { value: '72h', label: '72 heures' }
+  { value: '24h', label: '24 heures', minutes: 1440 },
+  { value: '48h', label: '48 heures', minutes: 2880 },
+  { value: '72h', label: '72 heures', minutes: 4320 }
 ]
 
 function Sondage() {
@@ -27,8 +27,10 @@ function Sondage() {
   })
 
   const [created, setCreated] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target
     setSondage((prev) => ({
       ...prev,
@@ -60,23 +62,66 @@ function Sondage() {
     setSondage((prev) => ({ ...prev, allowMultiple: !prev.allowMultiple }))
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setLoading(true)
+    setError(null)
 
-    const now = new Date()
-    const dateCreation = now.toISOString().slice(0, 10)
-    const lienPartage = `https://sondage.app/${now.getTime()}`
-    const newSondage = {
-      ...sondage,
-      dateCreation,
-      lienPartage
+    try {
+      // Récupérer le token depuis le localStorage
+      const token = localStorage.getItem('token')
+
+      // Convertir la durée en minutes
+      const durationOption = durationOptions.find(opt => opt.value === sondage.duration)
+      if (!durationOption) {
+        throw new Error('Durée invalide')
+      }
+
+      // Préparer les données pour l'API
+      const requestData = {
+        titre: sondage.question,
+        description: '', // Le back-end attend une description, mais le front n'en a pas
+        dureeMinutes: durationOption.minutes,
+        multiReponse: sondage.allowMultiple,
+        options: sondage.answers.filter(answer => answer.trim() !== '')
+      }
+
+      // Vérifier qu'il y a au moins 2 options valides
+      if (requestData.options.length < 2) {
+        throw new Error('Vous devez fournir au moins 2 réponses')
+      }
+
+      // Faire l'appel API
+      const response = await fetch('http://10.190.4.90:8081/sondages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(errorData || `Erreur HTTP: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      // Mettre à jour l'état avec les données du back-end
+      setSondage((prev) => ({
+        ...prev,
+        dateCreation: new Date().toISOString().slice(0, 10),
+        lienPartage: `http://10.190.4.90:8081/sondages/${result.lienPartage}`
+      }))
+
+      setCreated(true)
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur inattendue s\'est produite')
+    } finally {
+      setLoading(false)
     }
-
-    setSondage(newSondage)
-    setCreated(true)
-
-    console.log('Sondage créé :', newSondage)
-    alert(`Sondage créé localement.\nLien de partage : ${lienPartage}`)
   }
 
   return (
@@ -156,21 +201,29 @@ function Sondage() {
             </div>
           </div>
 
-          <button type="submit" className="submit-button">
-            Post
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="submit-button" disabled={loading}>
+            {loading ? 'Création en cours...' : 'Post'}
           </button>
         </form>
 
         {created && (
           <section className="created-summary">
-            <p>Sondage créé localement.</p>
+            <p>Sondage créé avec succès !</p>
             <div className="summary-row">
               <span>Date de création :</span>
               <strong>{sondage.dateCreation}</strong>
             </div>
             <div className="summary-row">
               <span>Lien de partage :</span>
-              <strong>{sondage.lienPartage}</strong>
+              <a href={sondage.lienPartage} target="_blank" rel="noopener noreferrer">
+                {sondage.lienPartage}
+              </a>
             </div>
           </section>
         )}
