@@ -5,6 +5,8 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Sondage from "./components/Sondage";
+import Resultats from "./pages/Resultats";
+import RechercheResultats from "./pages/RechercheResultats";
 
 function App() {
   return (
@@ -22,6 +24,26 @@ function App() {
             element={
               <RequireAuth>
                 <Sondage />
+              </RequireAuth>
+            }
+          />
+
+          {/* Page pour rechercher les résultats d'un sondage par son lien */}
+          <Route
+            path="/resultats"
+            element={
+              <RequireAuth>
+                <RechercheResultats />
+              </RequireAuth>
+            }
+          />
+
+          {/* Page des résultats d'un sondage */}
+          <Route
+            path="/sondages/:lienPartage/resultats"
+            element={
+              <RequireAuth>
+                <Resultats />
               </RequireAuth>
             }
           />

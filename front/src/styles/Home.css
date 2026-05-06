@@ -203,3 +203,16 @@
     font-size: 1.5rem;
   }
 }
+
+/* Carte cliquable (lien vers la page de recherche de résultats) */
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+}
+
+.card-link:hover {
+  transform: translateY(-4px);
+  transition: transform 0.2s ease;
+}

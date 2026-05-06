@@ -64,7 +64,7 @@ function Home() {
             votent en un clic.
           </p>
         </div>
-        <div className="card">
+        <Link to="/resultats" className="card card-link">
           <div className="icon-wrapper">
             <span className="icon">📊</span>
           </div>
@@ -73,7 +73,7 @@ function Home() {
             Visualisez les votes en direct. Décidez ensemble, plus vite,
             sans débat interminable.
           </p>
-        </div>
+        </Link>
       </section>
 
       {/* Section CTA */}
