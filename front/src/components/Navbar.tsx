@@ -5,7 +5,7 @@ import "../styles/Navbar.css";
 function Navbar() {
   const navigate = useNavigate();
   const isAuthenticated = authService.isAuthenticated();
-  const pseudo = localStorage.getItem("pseudo");
+  const currentUser = authService.getCurrentUser();
 
   const handleLogout = () => {
     authService.logout();
@@ -15,12 +15,15 @@ function Navbar() {
   return (
     <nav className="navbar">
       <Link to="/" className="logo">
-        🗳️ MonSondage
+        <span className="logo-icon">P</span>
+        PollHub
       </Link>
       <div className="links">
-        {isAuthenticated ? (
+        {isAuthenticated && currentUser ? (
           <>
-            <span className="welcome">Bonjour, {pseudo}</span>
+            <span className="welcome">
+              Bonjour, <span className="welcome-name">{currentUser.nom}</span>
+            </span>
             <button onClick={handleLogout} className="btn-logout">
               Déconnexion
             </button>
